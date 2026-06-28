@@ -10,6 +10,7 @@ These are human-in-the-loop workflows. Claude generates reference material, crit
 
 | Command | What it does |
 |---|---|
+| `/init` | Scans your project, asks a few questions, and writes the `WRITING.md` config file that all other commands depend on. Run this first. |
 | `/critique <draft>` | Reviews a draft and appends a new dated critique section to a `- Critique.md` file. Cross-references factual claims against your reference documents and beat plan. |
 | `/critique-help <draft>` | Works through the open annotations in a critique file, phase by phase: grammar fixes, scaffolding review, inline walkthrough, continuity conflicts, summary suggestions. |
 | `/chapter-start <chapter>` | Writes a complete reference draft of a chapter as `<!-- WRITING BLOCK -->` comment blocks. The author writes their own version from these and deletes the blocks when done. |
@@ -24,8 +25,10 @@ These are human-in-the-loop workflows. Claude generates reference material, crit
 ## Install
 
 1. Copy the `.claude/commands/` folder from this repo into the root of your writing project.
-2. Create a `WRITING.md` file at the root of your project. Use `WRITING.md.example` as the template.
-3. Run any command from your project directory.
+2. Run `/init` — it will scan your project, ask a few questions, and write `WRITING.md` for you.
+3. Run any other command from your project directory.
+
+Alternatively, copy `WRITING.md.example` to `WRITING.md` and fill it in manually.
 
 That's it. The commands read `WRITING.md` at startup to discover your project structure.
 
