@@ -1,0 +1,70 @@
+# Writing Project: [Your Title Here]
+
+This file is read by the Claude writing commands (`.claude/commands/`) to understand
+your project's structure. Place it at the root of your writing project repository.
+
+---
+
+## Drafts
+
+Where your draft files live and how they are named.
+
+- **Directory:** `Chapter drafts/`
+- **Naming pattern:** `Chapter {N} - Draft.md`
+- **Critique suffix:** ` - Critique` (appended before `.md`, e.g. `Chapter 1 - Draft - Critique.md`)
+- **Read-through suffix:** ` - Read-Through` (appended before `.md`, e.g. `Chapter 1 - Draft - Read-Through.md`)
+- **Continuity log:** `Continuity Check.md`
+
+---
+
+## Reference Documents
+
+List the files that are the canon / source of truth for this project. When critiquing
+drafts, these documents take precedence over the prose. Commands will read all of them
+when checking continuity, character consistency, and world rules.
+
+- `Characters.md` — character profiles, psychology, voice, relationships
+- `The World.md` — worldbuilding, geography, society, and physical environment
+- `Magic System.md` — rules for any magic, technology, or special abilities
+
+> Add or remove entries as needed. Short descriptions help the AI understand what
+> each file covers.
+
+---
+
+## Story Structure
+
+Paths to your planning documents. Leave blank or remove a line if you don't have
+that type of document.
+
+- **Chapter plan:** `Chapter Plan.md` (one entry per chapter: POV, purpose, themes)
+- **Beat plans:** `Chapter Writing Plans.md` (beat-by-beat plans per chapter or section)
+
+---
+
+## Epigraph Traditions (optional)
+
+Define the source traditions or styles for chapter epigraphs. If this section is
+absent, the `/epigraph` command will ask you to describe the voice before generating
+candidates.
+
+For each tradition, describe its voice, register, and attribution format. Three
+traditions are shown below as examples — replace, remove, or add as fits your project.
+
+### The Historical Record
+Voice and register: Dry, institutional, past-tense. Written as if from an archivist
+or chronicler. Slightly ironic distance from events described.
+Attribution format: [Name], [Institution or Title], [Date or Period]
+Thematic territory: Consequence, record, the gap between official history and lived truth.
+
+### The Folk Voice
+Voice and register: Oral, collective. Uses "we" or "they" as if passing down
+received wisdom. Compressed, rhythmic, weighted with what's left unsaid.
+Attribution format: None, or simply "Traditional" / "Origin unknown"
+Thematic territory: Community memory, loss, the things people carry.
+
+### The Personal Letter
+Voice and register: Addressed to someone who may not exist. Intimate, slightly
+desperate, occasionally dark. Written in second person.
+Attribution format: Unsigned, or signed with a first name only.
+Thematic territory: Grief, longing, things said too late.
