@@ -37,13 +37,15 @@ This is the part most likely to corrupt the document if rushed. Follow it exactl
 
 1. For every edit, take the *exact* paragraph text from the just-completed `read_doc` result (not from an earlier read, not from memory of the prose) and locate the target substring with an actual string search (e.g. Python's `str.find`), not by eyeballing character counts. Record the precise `start` and `end` offsets this produces.
 2. Never reuse indices computed before a prior write in this same session. Every `update_doc` call shifts indices for everything after the edit. After any write, the only indices you can trust are ones computed from a fresh `read_doc` taken after that write.
-3. When a batch contains multiple edits, order the requests by descending `startIndex` (the edit closest to the end of the document first). Applied in that order, an edit never shifts the index of an edit still waiting to be applied later in the same batch. Applying them in ascending order is how indices drift and text gets corrupted, an insertion or deletion earlier in the document shifts every index after it, silently invalidating the positions you already computed for later edits in the same call.
+3. **One suggested edit per `update_doc` call, full stop.** Do not batch multiple `SUGGEST`-mode deleteContentRange/insertText pairs into a single call, even ordered by descending `startIndex`. In practice, a `SUGGEST`-mode deletion does not remove the old text from the document's index space the way it looks like it should, so a second edit's indices computed against a pre-batch read can land in the wrong paragraph entirely once an earlier request in the same call has already inserted text. This has caused real corruption: suggestions landing mid-word in an unrelated paragraph, with no error returned by the API. The only proven-safe pattern is: one edit, one `update_doc` call, one `read_doc` to verify, then move to the next edit. It is slower. Do it anyway.
 4. Prefer the smallest edit that fixes the problem. Replace one word, not the sentence around it, when only one word is wrong. Smaller edits are easier to verify and less likely to accidentally swallow adjacent punctuation or the paragraph's trailing newline.
 5. When a run ends with the paragraph's own trailing `\n`, make sure your delete range stops one character short of it (`endIndex - 1`), so you never delete the paragraph break itself. A deleted paragraph break merges two paragraphs into one, which is easy to miss until the whole document reads wrong.
 
+Multiple `EDIT`-mode requests (see Phase 4's corruption-repair case) may still be batched together in one call ordered by descending `startIndex` — `EDIT` mode does not have the index-retention problem described above, since deleted text is actually removed rather than just marked. The one-edit-per-call rule is specific to `SUGGEST` mode.
+
 ### Phase 3 — Apply as suggestions
 
-For a **concrete edit**, submit a `deleteContentRange` for the old text immediately followed by an `insertText` at the same `startIndex` with the replacement, both in the same `update_doc` call with `writeControl: {"writeMode": "SUGGEST"}`. This renders as a single proposed replacement in the sidebar.
+For a **concrete edit**, submit a `deleteContentRange` for the old text immediately followed by an `insertText` at the same `startIndex` with the replacement, both in the same `update_doc` call with `writeControl: {"writeMode": "SUGGEST"}`. This renders as a single proposed replacement in the sidebar. Per Phase 2 step 3, this is the *only* pair of requests in that call: read, edit, verify, then move to the next issue.
 
 For an **analytical note**, submit a single `insertText` in `SUGGEST` mode, placed right after the sentence or paragraph it concerns, formatted as:
 
@@ -51,18 +53,24 @@ For an **analytical note**, submit a single `insertText` in `SUGGEST` mode, plac
  [Note: <the observation, plain and specific, one to two sentences>]
 ```
 
-Lead with a space so it doesn't run into the preceding word. Never claim a specific fix in a note. If you find yourself writing "change X to Y" inside a `[Note: ...]`, it belongs in Phase 3's concrete-edit path instead, as a real suggested replacement.
-
-Batch same-mode requests together (all `SUGGEST` requests in one `update_doc` call, ordered per Phase 2 step 3). Never mix `EDIT` and `SUGGEST` requests in the same call, `writeControl.writeMode` applies to the whole call, not per-request.
+Lead with a space so it doesn't run into the preceding word, unless the preceding character in the document is already whitespace, in which case omit the leading space to avoid a double space. Never claim a specific fix in a note. If you find yourself writing "change X to Y" inside a `[Note: ...]`, it belongs in Phase 3's concrete-edit path instead, as a real suggested replacement. This, too, is one `insertText` per `update_doc` call, verified before the next one.
 
 ### Phase 4 — Verify
 
-After every batch that includes a `deleteContentRange`, call `mcp__Google_Docs__read_doc` again and read the changed paragraphs in full. Confirm:
+After every single edit (see Phase 2 step 3 — this means after every `update_doc` call, since each one contains exactly one edit), call `mcp__Google_Docs__read_doc` again and read the changed paragraph in full, plus the paragraphs immediately before and after it. Confirm:
 
-- The surrounding prose still reads correctly, no missing words, no merged sentences, no duplicated fragments.
-- Each edit shows up with the expected `suggestedInsertionIds`/`suggestedDeletionIds` pairing, not as plain committed text (which would mean it landed in `EDIT` mode by mistake).
+- The edit's suggested insertion/deletion pair sits inside the paragraph you targeted, not some other paragraph.
+- The surrounding prose still reads correctly, no missing words, no merged sentences, no duplicated fragments, no word split mid-way by a suggestion boundary.
+- The edit shows up with the expected `suggestedInsertionIds`/`suggestedDeletionIds` pairing, not as plain committed text (which would mean it landed in `EDIT` mode by mistake).
 
-If verification turns up corrupted text, fix it immediately, before doing anything else, with a direct `EDIT`-mode delete-and-reinsert of the correct original passage. Confirm the fix with one more read before continuing. Never leave a session with prose you know is damaged.
+If verification turns up corrupted text, stop adding new suggestions and fix it immediately, before doing anything else:
+
+1. From the fresh read, identify every run touched by the bad suggestion(s): the misplaced suggested-insertion run(s) and the suggested-deletion run(s) whose content is real original prose that must not be lost.
+2. Reconstruct the correct original text for the full span from the start of the first bad run to the end of the last one, using the pre-edit document text (an earlier read in this session, or the prose as given) — not by re-deriving it from the corrupted runs alone.
+3. Issue a direct `EDIT`-mode `deleteContentRange` over that whole span followed by `insertText` of the reconstructed correct text, at the exact indices from the corrupted-state read. If more than one such span needs fixing, batch them in a single `EDIT`-mode call ordered by descending `startIndex` (safe in `EDIT` mode, see Phase 2 step 3).
+4. Confirm the fix with one more `read_doc` before continuing. Never leave a session with prose you know is damaged.
+5. Once confirmed clean, reapply the edit(s) that failed, one at a time per Phase 2 step 3, verifying each before the next.
+6. Disclose the corruption and repair to the author when you report back, plainly and without minimizing it.
 
 To remove a previous pass's stale notes (an issue that's been resolved, a note that no longer applies), delete them from the base document with `EDIT` mode. Match the exact original note text with `replaceAllText` rather than hand-computed index ranges where possible, it's more forgiving of an off-by-one than a `deleteContentRange` is.
 
