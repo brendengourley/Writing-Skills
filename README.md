@@ -19,6 +19,7 @@ These are human-in-the-loop workflows. Claude generates reference material, crit
 | `/epigraph <chapter>` | Generates 2–3 candidate epigraphs in the correct tradition voice. The author picks one and places it as a comment block at the top of the draft. |
 | `/continuity-check` | Reads all drafts in narrative order and audits for cross-chapter contradictions and inconsistencies with the reference documents. Outputs a tracked checkbox log. |
 | `/grill-me` | Interviews you about a plan or decision, walking the design tree one question at a time until shared understanding is reached. |
+| `/gdoc-suggest <doc url>` | Live-document counterpart to `/critique` + `/critique-help`. Reviews a Google Doc and leaves feedback directly in it as real Google Docs suggestions: concrete fixes as suggested text replacements, structural/judgment-call notes as suggested `[Note: ...]` insertions. Nothing is written to the manuscript outside of Suggesting mode. |
 
 ---
 
@@ -58,6 +59,8 @@ The commands use two kinds of comment blocks as scaffolding inside draft files:
 - `%% SUGGESTION [label]: [text] %%` — inline alternatives and depth suggestions. Obsidian-style comments, invisible in reading mode, visible in edit mode.
 
 Neither type lands directly in the draft as final prose. The author writes their own version and deletes the block when done.
+
+`/gdoc-suggest` is the exception: it targets a live Google Doc instead of a markdown file, so it uses Google Docs' own Suggesting mode rather than comment-block scaffolding. Concrete fixes become real suggested text replacements; structural or judgment-call feedback becomes a suggested `[Note: ...]` insertion. Both are accepted or rejected directly in the doc, no manual cleanup pass required.
 
 ---
 
