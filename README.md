@@ -20,6 +20,7 @@ These are human-in-the-loop workflows. Claude generates reference material, crit
 | `/continuity-check` | Reads all drafts in narrative order and audits for cross-chapter contradictions and inconsistencies with the reference documents. Outputs a tracked checkbox log. |
 | `/grill-me` | Interviews you about a plan or decision, walking the design tree one question at a time until shared understanding is reached. |
 | `/gdoc-suggest <doc url>` | Live-document counterpart to `/critique` + `/critique-help`. Reviews a Google Doc and leaves feedback directly in it as real Google Docs suggestions: concrete fixes as suggested text replacements, structural/judgment-call notes as suggested `[Note: ...]` insertions. Nothing is written to the manuscript outside of Suggesting mode. |
+| `/gdoc-flow-pass <doc url> <pages>` | Reads a page range of a Google Doc for sentence and paragraph flow (comma splices, loose pronouns, repeated words, dialogue tags, telling labels, clumsy transitions) and leaves each fix as a tracked suggestion, one verified edit at a time. |
 
 ---
 
